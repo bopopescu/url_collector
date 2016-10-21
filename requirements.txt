@@ -1,0 +1,5 @@
+requests==2.11.1
+six==1.10.0
+slackclient==1.0.2
+websocket-client==0.37.0
+https://cdn.mysql.com/Downloads/Connector-Python/mysql-connector-python-1.0.12.tar.gz

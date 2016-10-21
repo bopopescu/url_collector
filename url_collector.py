@@ -42,7 +42,7 @@ def message_from_resource_channel(slack_rtm_output):
             if output and 'text' in output:
                 response = slack_client.api_call('channels.info',
                                         channel=output['channel'])
-                if response['channel']['name'] == "url_collector_test":
+                if response['channel']['name'] == "resources":
                     return output['text']
 
     return None

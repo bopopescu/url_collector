@@ -2,7 +2,8 @@ import os
 import time
 from slackclient import SlackClient
 import re
-
+import mysql.connector
+import config
 # starterbot's ID as an environment variable
 BOT_ID = os.environ.get("BOT_ID")
 
@@ -19,15 +20,15 @@ def contains_url(text):
         return urls
     return None
 
-def store_data(data):
+def store_data(url):
     # store url
     cursor = cnx.cursor()
-    data = [url,time.strftime('%Y-%m-%d %H:%M:%S')]
+    data = [url[:-1],time.strftime('%Y-%m-%d %H:%M:%S')]
     data_log = tuple(data)
-    update_log=("INSERT INTO urls (url,date_shared) VALUES (%s,%s)")
+    update_log=("INSERT INTO urls (url,shared_at) VALUES (%s,%s)")
     cursor.execute(update_log, data_log)
     cnx.commit()
-    print "data stored"
+    print ("data stored")
     cursor.close()
 
 def message_from_resource_channel(slack_rtm_output):

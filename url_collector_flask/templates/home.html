@@ -1,0 +1,16 @@
+<doctype! html>
+  <html>
+    <head>
+
+    </head>
+    <body>
+        <ul class="entries">
+        {% for entry in entries %}
+          <li><h2>{{ entry[1] }}</h2>{{ entry[2] }}</li>
+        {% else %}
+          <li><em>Unbelievable.  No entries here so far</em></li>
+        {% endfor %}
+        </ul>
+    </body>
+  </html>
+</doctype!>

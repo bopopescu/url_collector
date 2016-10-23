@@ -1,9 +1,21 @@
 import os
-import time
 from slackclient import SlackClient
+import psycopg2
+import time
 import re
-import mysql.connector
+from urllib import parse as urlparse
 import config
+
+urlparse.uses_netloc.append("postgres")
+url = urlparse.urlparse(config.DB_URL)
+
+conn = psycopg2.connect(
+    database=url.path[1:],
+    user=url.username,
+    password=url.password,
+    host=url.hostname,
+    port=url.port
+)
 # starterbot's ID as an environment variable
 BOT_ID = os.environ.get("BOT_ID")
 
@@ -20,15 +32,18 @@ def contains_url(text):
         return urls
     return None
 
-def store_data(url):
+def store_data(url,channel_name):
     # store url
-    cursor = cnx.cursor()
-    data = [url[:-1],time.strftime('%Y-%m-%d %H:%M:%S')]
+    cursor = conn.cursor()
+    data = [url[:-1],time.strftime('%Y-%m-%d %H:%M:%S'),channel_name]
     data_log = tuple(data)
-    update_log=("INSERT INTO urls (url,shared_at) VALUES (%s,%s)")
+    update_log=("INSERT INTO urls (url,shared_at,channel) VALUES (%s,%s,%s)")
     cursor.execute(update_log, data_log)
-    cnx.commit()
     print ("data stored")
+    cursor.execute('select * from urls')
+    rows = cursor.fetchall()
+    print (rows)
+    conn.commit()
     cursor.close()
 
 def message_from_resource_channel(slack_rtm_output):
@@ -43,26 +58,24 @@ def message_from_resource_channel(slack_rtm_output):
                 response = slack_client.api_call('channels.info',
                                         channel=output['channel'])
                 if 'channel' in response:
-                    if response['channel']['name'] == "resources":
-                        return output['text']
+                    return output['text'],response['channel']['name']
 
-    return None
+    return None, None
 
 
 if __name__ == "__main__":
-    cnx = mysql.connector.connect(**config.db_info) # connect to database
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         # keep listening to notifications
         while True:
             slack_rtm_output = slack_client.rtm_read()
-            text = message_from_resource_channel(slack_rtm_output)
+            text,channel_name = message_from_resource_channel(slack_rtm_output)
             if text:
                 urls = contains_url(text)
                 if urls:
                     for url in urls:
-                        store_data(url)
+                        store_data(url,channel_name)
 
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
